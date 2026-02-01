@@ -9,7 +9,6 @@ import model.GameLogic;
 public class GameWindow {
 
 	public static void show() {
-		// Minimal model instance (empty for now, by design)
 		GameLogic model = new GameLogic();
 
 
@@ -20,13 +19,11 @@ public class GameWindow {
 		try {
 			frame.add(new GameComponent(model));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 
 		frame.setSize(800, 800);
-		frame.setLocationRelativeTo(null); // center on screen (nice UX, still minimal)
 		frame.setVisible(true);
 		}
 
