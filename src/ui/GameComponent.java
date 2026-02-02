@@ -1,6 +1,5 @@
 package ui;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -8,12 +7,15 @@ import java.awt.Image;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.Timer;
 
 import model.GameLogic;
+import model.Collectibles;
 import model.Enemy;
 import model.Player;
 
@@ -31,7 +33,7 @@ public class GameComponent extends JComponent {
 			{1,1,1,0,0,0,1,1,0,1},
 			{1,0,1,0,0,0,0,0,0,1},
 			{1,0,0,0,0,0,0,0,0,1},
-			{1,0,0,1,1,1,1,1,1,1},
+			{1,0,0,1,1,1,1,1,0,1},
 			{1,0,0,1,0,0,0,0,0,1},
 			{1,1,1,1,1,1,1,1,1,1}
 	};
@@ -40,10 +42,12 @@ public class GameComponent extends JComponent {
 	
 	private Image playerSprite;
 	private Image enemySprite;
+	private Image gemSprite;
 		
 	private Player player;
 	private Enemy enemy;
-	
+	private ArrayList<Collectibles> gems;
+
 	private final Timer timer;
 	private long lastTickNanos;
 
@@ -64,6 +68,7 @@ public class GameComponent extends JComponent {
         
         playerSprite = ImageIO.read(getClass().getResource("steveSprite.png"));
         enemySprite = ImageIO.read(getClass().getResource("zombieSprite.png"));
+        gemSprite = ImageIO.read(getClass().getResource("gemSprite.png"));
         
     } catch (IOException e) {
         throw new RuntimeException("Failed to load tile images", e);
@@ -71,6 +76,8 @@ public class GameComponent extends JComponent {
 	
 	player = new Player(1 * TILE_SIZE, 8 * TILE_SIZE, 70, 100, playerSprite);
 	enemy = new Enemy(7 * TILE_SIZE, 6 * TILE_SIZE, 70, 90, enemySprite);
+	gems=new ArrayList<>();
+	createGems(5);
 	
 	addKeyListener(new KeyAdapter() {
 		@Override
@@ -131,7 +138,20 @@ public class GameComponent extends JComponent {
 		return tileId != 1;
 	}
 	
-
+	private void createGems(int num) {
+	    Random rand = new Random();
+	    int count = 0;
+	    while (count < num) {
+	        int row = rand.nextInt(tiles.length);
+	        int col = rand.nextInt(tiles[0].length);
+	        if (tiles[row][col] == 0) {
+	            int x = col * TILE_SIZE;
+	            int y = row * TILE_SIZE;
+	            gems.add(new Collectibles(x, y, 70, gemSprite));
+	            count++;
+	        }
+	    }
+	}
 
 	@Override
 	protected void paintComponent(Graphics g) {
@@ -149,6 +169,9 @@ public class GameComponent extends JComponent {
         }
     }
 	
+	
+	for (Collectibles gem : gems) 
+	    gem.draw(g2);
 	player.draw(g2);
 	enemy.draw(g2);
 	}
