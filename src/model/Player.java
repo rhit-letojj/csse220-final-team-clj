@@ -2,6 +2,7 @@ package model;
 
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
 
 public class Player {
 	
@@ -11,6 +12,9 @@ public class Player {
 	private final int size;
 	private final double speed;
 	private final Image sprite;
+	public int lives=5;
+	public int score=0;
+	public boolean pushing;
 	
 	private boolean left, right, up, down;
 	
@@ -45,6 +49,18 @@ public class Player {
 		}
 	}
 	
+	public double getPushDX() {
+	    if (right) return 1;
+	    if (left) return -1;
+	    return 0;
+	}
+
+	public double getPushDY() {
+	    if (down) return 1;
+	    if (up) return -1;
+	    return 0;
+	}
+	
 	public void draw(Graphics2D g2) {
 		if(sprite != null) {
 			g2.drawImage(sprite, (int) x, (int) y, size, size, null);
@@ -53,13 +69,37 @@ public class Player {
 		}
 	}
 	
+	public Rectangle playerGetBounds() {
+	    Rectangle p = new Rectangle((int)x,(int)y,size,size);
+	    return p;
+	}
+	public Rectangle pushGetBounds() {
+	    Rectangle pb = new Rectangle((int)x,(int)y,size+20,size+20);
+	    return pb;
+	}
+	
+	public int hurt() {
+		lives--;
+		return lives;
+	}
+	
+	public void addPoints(int amount) {
+		score += amount;
+	}
+	
 	public void setLeft(boolean v) {left = v;}
 	public void setRight(boolean v) { right = v; }
     public void setUp(boolean v)    { up = v; }
     public void setDown(boolean v)  { down = v; }
+    public void setPush(boolean pushing)  { this.pushing =pushing; }
+   
 
     public double getX() { return x; }
     public double getY() { return y; }
     public int getSize() { return size; }
+    
+    public int getLives() {return lives;}
+    public int getScore() {return score;}
 
 }
+

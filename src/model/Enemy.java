@@ -2,6 +2,7 @@ package model;
 
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
 
 public class Enemy {
 	
@@ -53,6 +54,21 @@ public class Enemy {
 		if(sprite != null) {
 			g2.drawImage(sprite, (int) x, (int) y, size, size, null);
 		}
+	}
+	
+	public Rectangle enemyGetBounds() {
+	    Rectangle e = new Rectangle((int)x,(int)y,size,size);
+	    return e;
+	}
+	
+	public void push(double dx, double dy, Walkable walkable) {
+		double pushDistance = 80;
+	    double newX = x + dx * pushDistance;
+	    double newY = y + dy * pushDistance;
+	    if (walkable.isWalkable(newX, newY, size, size)) {
+	        x = newX;
+	        y = newY;
+	    }
 	}
 	
 	public double getX() {return x;}

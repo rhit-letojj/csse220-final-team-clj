@@ -2,6 +2,7 @@ package model;
 
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
 
 import javax.imageio.ImageIO;
 
@@ -23,5 +24,9 @@ public class Collectibles {
 		} else {
 			
 		}
+	}
+	public Rectangle gemGetBounds() {
+	    Rectangle g = new Rectangle((int)x,(int)y,size,size);
+	    return g;
 	}
 }
