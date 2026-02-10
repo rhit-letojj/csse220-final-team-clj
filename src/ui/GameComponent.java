@@ -6,234 +6,210 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import model.GameLogic;
-import model.Collectibles;
+import model.Collectible;
 import model.Enemy;
+import model.GameLogic;
+import model.Map;
 import model.Player;
-
 
 public class GameComponent extends JComponent {
 
-	
-	
-	private GameLogic model;
-	
-	int[][] tiles = {
-			{1,1,1,1,1,1,1,1,3,1},
-			{1,1,1,2,0,0,0,0,0,1},
-			{1,1,1,1,0,0,1,1,1,1},
-			{1,2,0,0,0,0,1,2,0,1},
-			{1,1,1,0,0,0,1,1,0,1},
-			{1,2,1,0,0,0,0,0,0,1},
-			{1,0,0,0,0,0,0,0,0,1},
-			{1,0,0,1,1,1,1,1,0,1},
-			{1,0,0,1,2,0,0,0,0,1},
-			{1,1,1,1,1,1,1,1,1,1}
-	};
-	private Image[] tileImages;
-	private final int TILE_SIZE = 80;
-	
-	private Image playerSprite;
-	private Image enemySprite;
-	private Image gemSprite;
-		
-	private Player player;
-	private Enemy enemy;
-	private ArrayList<Collectibles> gems;
-	private boolean isTouching;
+    private final GameLogic model;
+    private final Map map;
 
-	private Timer timer;
-	private long lastTickNanos;
-	private int cooldown=2000;
-	private boolean gameOver = false;
+    private final Player player;
+    private final ArrayList<Enemy> enemies;
+    private final ArrayList<Collectible> gems;
 
-	public GameComponent(GameLogic model) throws IOException {
-	this.model = model;
-	
-	int w = tiles[0].length * TILE_SIZE;
-	int h = tiles.length * TILE_SIZE;
-	setPreferredSize(new Dimension(w, h));
-	setFocusable(true);
-	
-	this.tileImages = new Image[4];
-	try {
-        tileImages[0] = ImageIO.read(getClass().getResource("grassTile.png"));
-        tileImages[1] = ImageIO.read(getClass().getResource("rockTile.png"));
-        tileImages[2] = ImageIO.read(getClass().getResource("grassTile.png"));
-        tileImages[3] = ImageIO.read(getClass().getResource("exitTile.png"));
-        
-        playerSprite = ImageIO.read(getClass().getResource("steveSprite.png"));
-        enemySprite = ImageIO.read(getClass().getResource("zombieSprite.png"));
-        gemSprite = ImageIO.read(getClass().getResource("gemSprite.png"));
-        
-    } catch (IOException e) {
-        throw new RuntimeException("Failed to load tile images", e);
+    private final Runnable onWin;
+    private final Runnable onGameOver;
+
+    private Image grassTile;
+    private Image wallTile;
+    private Image wallTileB;
+    private Image exitTile;
+
+    private Timer timer;
+    private long lastTickNanos;
+
+    private int damageCooldownMs = 0;
+    private boolean gameOver = false;
+    private boolean win = false;
+
+    public GameComponent(GameLogic model, Runnable onWin, Runnable onGameOver) throws IOException {
+        this.model = model;
+        this.map = model.getMap();
+        this.player = model.getPlayer();
+        this.enemies = new ArrayList<>(model.getEnemies());
+        this.gems = new ArrayList<>(model.getGems());
+        this.onWin = onWin;
+        this.onGameOver = onGameOver;
+
+        setPreferredSize(new Dimension(
+                map.getWidth() * Map.TILE_SIZE,
+                map.getHeight() * Map.TILE_SIZE
+        ));
+        setFocusable(true);
+
+        grassTile = ImageIO.read(getClass().getResource("grassTile.png"));
+        wallTile = ImageIO.read(getClass().getResource("wallTile.png"));
+        wallTileB = ImageIO.read(getClass().getResource("wallTileBottom.png"));
+        exitTile = ImageIO.read(getClass().getResource("exitTile.png"));
+
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                setKey(e.getKeyCode(), true);
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                setKey(e.getKeyCode(), false);
+            }
+        });
+
+        lastTickNanos = System.nanoTime();
+        timer = new Timer(16, e -> update());
+        timer.start();
     }
-	
-	player = new Player(1 * TILE_SIZE, 8 * TILE_SIZE, 70, 100, playerSprite);
-	enemy = new Enemy(7 * TILE_SIZE, 6 * TILE_SIZE, 70, 90, enemySprite);
-	gems=new ArrayList<>();
-	createGems();
-	
-	addKeyListener(new KeyAdapter() {
-		@Override
-		public void keyPressed(KeyEvent e) {
-			setKey(e.getKeyCode(), true);
-		}
-		
-		@Override
-		public void keyReleased(KeyEvent e) {
-			setKey(e.getKeyCode(), false);
-		}
-	});
-	
-	lastTickNanos = System.nanoTime();
-	timer = new Timer(16, e ->{
-		long now = System.nanoTime();
-		double dt = (now - lastTickNanos) / 1_000_000_000.0;
-		lastTickNanos = now;
-		
-		player.update(dt, this::isWalkableRect);
-		enemy.update(dt,  this::isWalkableRect);
-		isTouching=player.pushGetBounds().intersects(enemy.enemyGetBounds());
-		
-		for(int i = 0; i < gems.size(); i++) {
-			if(player.playerGetBounds().intersects(gems.get(i).gemGetBounds())) {
-				gems.remove(i);
-				player.addPoints(100);
-				break;
-	}
-		}
-		
-		if(cooldown>0)
-			cooldown=cooldown-16;
-		 
-		if (player.pushing&&isTouching) {
-			double dx = player.getPushDX();
-		    double dy = player.getPushDY();
 
-		    if (dx != 0 || dy != 0) {
-		        enemy.push(dx, dy, this::isWalkableRect);
-		    }
+    private void update() {
+        if (gameOver || win) return;
+
+        long now = System.nanoTime();
+        double dt = (now - lastTickNanos) / 1_000_000_000.0;
+        lastTickNanos = now;
+
+        if (damageCooldownMs > 0) damageCooldownMs -= 16;
+
+        player.update(dt, map);
+
+        for (Enemy enemy : enemies) {
+            enemy.update(dt, map);
         }
-		
-		if (player.playerGetBounds().intersects(enemy.enemyGetBounds())) {
-			if(cooldown<=0) {
-				player.hurt();
-            	cooldown=2000;}
+
+        for (int i = 0; i < gems.size(); i++) {
+            if (player.playerGetBounds().intersects(gems.get(i).gemGetBounds())) {
+                gems.remove(i);
+                player.addPoints(100);
+                break;
+            }
         }
-		if (player.getLives()==0) {
-			gameOver = true;
-			timer.stop();
-		}
-		repaint();
-	});
-	timer.start();
-	
-	}
-	
-	@Override
-	public void addNotify() {
-		super.addNotify();
-		requestFocusInWindow();
-	}
-	
-	private void setKey(int keyCode, boolean down) {
-		switch(keyCode) {
-		case KeyEvent.VK_A  -> player.setLeft(down);
-		case KeyEvent.VK_D -> player.setRight(down);
-		case KeyEvent.VK_W    -> player.setUp(down);
-		case KeyEvent.VK_S  -> player.setDown(down);
-		case KeyEvent.VK_SPACE -> player.setPush(down);
-		}
-	}
-	
-	private boolean isWalkableRect(double x, double y, int w, int h) {
-		if(x < 0 || y < 0) return false;
-		if(x + w > getWidth() || y + h > getHeight()) return false;
-		
-		return isWalkablePoint(x, y)
-				&& isWalkablePoint(x + w - 1, y)
-				&& isWalkablePoint(x, y + h - 1)
-				&& isWalkablePoint(x + w - 1, y + h - 1); 
-	}
-	
-	private boolean isWalkablePoint(double px, double py) {
-		int tx = (int) (px / TILE_SIZE);
-		int ty = (int) (py / TILE_SIZE);
-		
-		int tileId = tiles[ty][tx];
-		return tileId != 1;
-	}
-	
-	private void createGems() {
-		for (int y = 0; y < tiles.length; y++) {
-	        for (int x = 0; x < tiles[y].length; x++) {
-	        if (tiles[y][x] == 2) {
-	            int dx = x * TILE_SIZE;
-	            int dy = y * TILE_SIZE;
-	            gems.add(new Collectibles(dx, dy, 70, gemSprite));
-	        }
-	        }
-	    }
-	}
 
-	@Override
-	protected void paintComponent(Graphics g) {
-	super.paintComponent(g);
-	Graphics2D g2 = (Graphics2D) g;
-	for (int y = 0; y < tiles.length; y++) {
-        for (int x = 0; x < tiles[y].length; x++) {
-            int tileId = tiles[y][x];
-            Image tileImage = tileImages[tileId];
+        if (player.pushing) {
+            for (Enemy enemy : enemies) {
+                if (player.pushGetBounds().intersects(enemy.enemyGetBounds())) {
+                    double dx = player.getPushDX();
+                    double dy = player.getPushDY();
+                    if (dx != 0 || dy != 0) {
+                        enemy.push(dx, dy, map);
+                    }
+                }
+            }
+        }
 
-            int dx = x * TILE_SIZE;
-            int dy = y * TILE_SIZE;
+        for (Enemy enemy : enemies) {
+            if (player.playerGetBounds().intersects(enemy.enemyGetBounds())) {
+                if (damageCooldownMs <= 0) {
+                    player.hurt();
+                    damageCooldownMs = 2000;
+                }
+            }
+        }
 
-            g.drawImage(tileImage, dx, dy, TILE_SIZE, TILE_SIZE, null);
+        model.syncPlayerStatsFromPlayer();
+
+        if (player.getLives() <= 0) {
+            gameOver = true;
+            timer.stop();
+            SwingUtilities.invokeLater(onGameOver);
+        }
+
+        if (model.getExit() != null && player.playerGetBounds().intersects(model.getExit())) {
+            win = true;
+            timer.stop();
+            SwingUtilities.invokeLater(onWin);
+        }
+
+        repaint();
+    }
+
+    private void setKey(int keyCode, boolean down) {
+        switch (keyCode) {
+            case KeyEvent.VK_A -> player.setLeft(down);
+            case KeyEvent.VK_D -> player.setRight(down);
+            case KeyEvent.VK_W -> player.setUp(down);
+            case KeyEvent.VK_S -> player.setDown(down);
+            case KeyEvent.VK_SPACE -> player.setPush(down);
         }
     }
-	
-	
-	for (Collectibles gem : gems) 
-	    gem.draw(g2);
-	player.draw(g2);
-	enemy.draw(g2);
-	
-	g2.setColor(new Color(0, 0, 0, 160)); 
-	g2.fillRoundRect(10, 10, 200, 70, 15, 15);
 
-	g2.setColor(Color.WHITE);
-	g2.setFont(new Font("Arial", Font.BOLD, 24));
-	g2.drawString("Lives: " + player.getLives(), 20, 40);
-	g2.drawString("Score: " + player.getScore(), 20, 65);
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        requestFocusInWindow();
+    }
 
-	g2.setFont(new Font("Arial", Font.PLAIN, 18));
-	g2.drawString("Push: SPACE", 20, 95);
-	
-	if (gameOver) {
-		g2.setColor(new Color(0, 0, 0, 180));
-		g2.fillRect(0, 0, getWidth(), getHeight());
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g;
 
-		g2.setColor(Color.WHITE);
-		g2.setFont(new Font("Arial", Font.BOLD, 80));
-		g2.drawString("GAME OVER", getWidth() / 2 - 220, getHeight() / 2 - 20);
+        for (int y = 0; y < map.getHeight(); y++) {
+            for (int x = 0; x < map.getWidth(); x++) {
+                char t = map.getTile(x, y);
+                Image img = switch (t) {
+                    case 'w' -> wallTile;
+                    case 'b' -> wallTileB;
+                    case 'e' -> exitTile;
+                    default -> grassTile;
+                };
 
-		g2.setFont(new Font("Arial", Font.BOLD, 36));
-		g2.drawString("Final Score: " + player.getScore(),
-				getWidth() / 2 - 150, getHeight() / 2 + 40);
-	}
-	}
-	
-	
+                g2.drawImage(
+                        img,
+                        x * Map.TILE_SIZE,
+                        y * Map.TILE_SIZE,
+                        Map.TILE_SIZE,
+                        Map.TILE_SIZE,
+                        null
+                );
+            }
+        }
+
+        for (Collectible gem : gems) gem.draw(g2);
+        for (Enemy enemy : enemies) enemy.draw(g2);
+        player.draw(g2);
+
+        g2.setColor(new Color(0, 0, 0, 160));
+        g2.fillRoundRect(10, 10, 230, 95, 15, 15);
+
+        g2.setFont(new Font(Font.MONOSPACED, Font.BOLD, 24));
+
+        g2.setColor(Color.BLACK);
+        g2.drawString("Lives: " + player.getLives(), 22, 42);
+        g2.drawString("Score: " + player.getScore(), 22, 67);
+
+        g2.setColor(Color.WHITE);
+        g2.drawString("Lives: " + player.getLives(), 20, 40);
+        g2.drawString("Score: " + player.getScore(), 20, 65);
+
+        g2.setFont(new Font(Font.MONOSPACED, Font.BOLD, 18));
+
+        g2.setColor(Color.BLACK);
+        g2.drawString("Push: SPACE", 22, 92);
+
+        g2.setColor(Color.WHITE);
+        g2.drawString("Push: SPACE", 20, 90);
+    }
 }

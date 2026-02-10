@@ -6,13 +6,13 @@ import java.awt.Rectangle;
 
 import javax.imageio.ImageIO;
 
-public class Collectibles {
+public class Collectible {
 	private double x;
 	private double y;
 	private final int size;
 	private final Image sprite;
 	
-	public Collectibles(double x, double y, int size, Image sprite) {
+	public Collectible(double x, double y, int size, Image sprite) {
 		this.x = x;
 		this.y = y;
 		this.size = size;

@@ -49,6 +49,9 @@ public class Player {
 		}
 	}
 	
+	public void setLives(int lives) { this.lives = lives; }
+	public void setScore(int score) { this.score = score; }
+	
 	public double getPushDX() {
 	    if (right) return 1;
 	    if (left) return -1;
