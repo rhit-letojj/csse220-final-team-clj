@@ -54,7 +54,7 @@ public class GameComponent extends JComponent {
 
 	private Timer timer;
 	private long lastTickNanos;
-	private int cooldown=1000;
+	private int cooldown=2000;
 	private boolean gameOver = false;
 
 	public GameComponent(GameLogic model) throws IOException {
@@ -130,7 +130,7 @@ public class GameComponent extends JComponent {
 		if (player.playerGetBounds().intersects(enemy.enemyGetBounds())) {
 			if(cooldown<=0) {
 				player.hurt();
-            	cooldown=1000;}
+            	cooldown=2000;}
         }
 		if (player.getLives()==0) {
 			gameOver = true;
