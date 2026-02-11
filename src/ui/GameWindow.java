@@ -29,6 +29,8 @@ public class GameWindow {
 
     private static GameLogic model;
     private static int levelIndex = 0;
+    
+    private static Sound bgm;
 
     public static void show() {
         frame = new JFrame("CSSE220 Final Project");
@@ -50,6 +52,10 @@ public class GameWindow {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
+        
+        bgm = new Sound("bgm.wav");
+        bgm.setVolume(-15f);
+        bgm.loop();
 
         root.add(makeStartPanel(), START);
         root.add(makeEndPanel("GAME OVER", "Play Again", () -> {

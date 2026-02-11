@@ -8,6 +8,7 @@ public class Player {
 	
 	private double x;
 	private double y;
+	private boolean facingRight = true;
 	
 	private final int size;
 	private final double speed;
@@ -37,6 +38,10 @@ public class Player {
 		
 		tryMove(walkable, dx, 0);
 		tryMove(walkable, 0, dy);
+		
+		if (dx > 0) facingRight = true;
+		if (dx < 0) facingRight = false;
+
 	}
 	
 	private void tryMove(Walkable walkable, double dx, double dy) {
@@ -65,13 +70,16 @@ public class Player {
 	}
 	
 	public void draw(Graphics2D g2) {
-		if(sprite != null) {
-			g2.drawImage(sprite, (int) x, (int) y, size, size, null);
-		} else {
-			
-		}
+	    if (sprite == null) return;
+
+	    if (facingRight) {
+	        g2.drawImage(sprite, (int)x, (int)y, size, size, null);
+	    } else {
+	        g2.drawImage(sprite,
+	                (int)(x + size), (int)y, -size, size, null);
+	    }
 	}
-	
+
 	public Rectangle playerGetBounds() {
 	    Rectangle p = new Rectangle((int)x,(int)y,size,size);
 	    return p;

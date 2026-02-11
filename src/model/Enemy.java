@@ -8,6 +8,7 @@ public class Enemy {
 	
 	private double x;
 	private double y;
+	private boolean facingRight = true;
 	
 	private final int size;
 	private final double speed;
@@ -43,19 +44,29 @@ public class Enemy {
 			if(walkable.isWalkable(nx, ny, size, size)) {
 				x = nx;
 				y = ny;
+				if (dir == 0) facingRight = true;
+				if (dir == 2) facingRight = false;
 				return;
 			}
+			
+			if (dx > 0) facingRight = true;
+			if (dx < 0) facingRight = false;
+
 			
 			dir = (dir + turnBias + 4) % 4;
 		}
 	}
 	
 	public void draw(Graphics2D g2) {
-		if(sprite != null) {
-			g2.drawImage(sprite, (int) x, (int) y, size, size, null);
-		}
+	    if (sprite == null) return;
+
+	    if (facingRight) {
+	        g2.drawImage(sprite, (int) x, (int) y, size, size, null);
+	    } else {
+	        g2.drawImage(sprite, (int) (x + size), (int) y, -size, size, null);
+	    }
 	}
-	
+
 	public Rectangle enemyGetBounds() {
 	    Rectangle e = new Rectangle((int)x,(int)y,size,size);
 	    return e;

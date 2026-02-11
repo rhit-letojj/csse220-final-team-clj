@@ -46,6 +46,13 @@ public class GameComponent extends JComponent {
     private int damageCooldownMs = 0;
     private boolean gameOver = false;
     private boolean win = false;
+    
+    private Sound sGem = new Sound("gem.wav");
+    private Sound sHurt = new Sound("hurt.wav");
+    private Sound sPush = new Sound("push.wav");
+    private Sound sWin = new Sound("win.wav");
+    private Sound sOver = new Sound("gameover.wav");
+
 
     public GameComponent(GameLogic model, Runnable onWin, Runnable onGameOver) throws IOException {
         this.model = model;
@@ -102,6 +109,7 @@ public class GameComponent extends JComponent {
         for (int i = 0; i < gems.size(); i++) {
             if (player.playerGetBounds().intersects(gems.get(i).gemGetBounds())) {
                 gems.remove(i);
+                sGem.play();
                 player.addPoints(100);
                 break;
             }
@@ -113,7 +121,8 @@ public class GameComponent extends JComponent {
                     double dx = player.getPushDX();
                     double dy = player.getPushDY();
                     if (dx != 0 || dy != 0) {
-                        enemy.push(dx, dy, map);
+                    		enemy.push(dx, dy, map);
+                    		sPush.play();
                     }
                 }
             }
@@ -124,6 +133,7 @@ public class GameComponent extends JComponent {
                 if (damageCooldownMs <= 0) {
                     player.hurt();
                     damageCooldownMs = 2000;
+                    sHurt.play();
                 }
             }
         }
@@ -133,12 +143,14 @@ public class GameComponent extends JComponent {
         if (player.getLives() <= 0) {
             gameOver = true;
             timer.stop();
+            sOver.play();
             SwingUtilities.invokeLater(onGameOver);
         }
 
         if (model.getExit() != null && player.playerGetBounds().intersects(model.getExit())) {
             win = true;
             timer.stop();
+            sWin.play();
             SwingUtilities.invokeLater(onWin);
         }
 

@@ -47,9 +47,9 @@ public class GameLogic {
                 int dx = x * Map.TILE_SIZE;
                 int dy = y * Map.TILE_SIZE;
 
-                if (tile == 'p') newPlayer = new Player(dx, dy, 70, 100, playerSprite);
-                if (tile == 'z') enemies.add(new Enemy(dx, dy, 70, 90, enemySprite));
-                if (tile == 'g') gems.add(new Collectible(dx, dy, 70, gemSprite));
+                if (tile == 'p') newPlayer = new Player(dx, dy, 60, 120, playerSprite);
+                if (tile == 'z') enemies.add(new Enemy(dx, dy, 60, 100, enemySprite));
+                if (tile == 'g') gems.add(new Collectible(dx, dy, 40, gemSprite));
                 if (tile == 'e') exit = new Rectangle(dx, dy, Map.TILE_SIZE, Map.TILE_SIZE);
             }
         }
