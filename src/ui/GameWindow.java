@@ -43,8 +43,9 @@ public class GameWindow {
             var playerSprite = ImageIO.read(GameWindow.class.getResource("steveSprite.png"));
             var enemySprite = ImageIO.read(GameWindow.class.getResource("zombieSprite.png"));
             var gemSprite = ImageIO.read(GameWindow.class.getResource("gemSprite.png"));
-
-            model = new GameLogic(playerSprite, enemySprite, gemSprite);
+            var heartSprite = ImageIO.read(GameWindow.class.getResource("heartSprite.png"));
+            
+            model = new GameLogic(playerSprite, enemySprite, gemSprite, heartSprite);
             model.loadLevel(LEVELS[0]);
 
         } catch (IOException ex) {
@@ -54,7 +55,7 @@ public class GameWindow {
         }
         
         bgm = new Sound("bgm.wav");
-        bgm.setVolume(-15f);
+        bgm.setVolume(-10f);
         bgm.loop();
 
         root.add(makeStartPanel(), START);
@@ -89,11 +90,11 @@ public class GameWindow {
         p.setBackground(new Color(155, 188, 15));
 
         JLabel title = new JLabel("BLOCKY MAZE!", SwingConstants.CENTER);
-        title.setFont(new Font(Font.MONOSPACED, Font.BOLD, 60));
+        title.setFont(new Font(Font.MONOSPACED, Font.BOLD, 80));
         title.setBounds(0, 120, 800, 80);
 
         JButton start = new JButton("START");
-        start.setFont(new Font(Font.MONOSPACED, Font.BOLD, 28));
+        start.setFont(new Font(Font.MONOSPACED, Font.BOLD, 50));
         start.setBounds(300, 260, 200, 70);
         start.addActionListener(e -> {
             try {
@@ -102,10 +103,15 @@ public class GameWindow {
                 throw new RuntimeException(ex);
             }
         });
+        
+        JLabel text = new JLabel("Made by team CLJ!", SwingConstants.CENTER);
+        text.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30));
+        text.setBounds(0, 400, 800, 80);
 
         p.setPreferredSize(new java.awt.Dimension(800, 800));
         p.add(title);
         p.add(start);
+        p.add(text);
         return p;
     }
 
@@ -118,13 +124,18 @@ public class GameWindow {
         title.setBounds(0, 180, 800, 80);
 
         JButton btn = new JButton(buttonText);
-        btn.setFont(new Font(Font.MONOSPACED, Font.BOLD, 28));
+        btn.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30));
         btn.setBounds(270, 320, 260, 70);
         btn.addActionListener(e -> onClick.run());
+        
+        JLabel text = new JLabel(("Score: "+model.getPlayer().getScore()+"    Lives Remaining: "+model.getPlayer().getLives()), SwingConstants.CENTER);
+        text.setFont(new Font(Font.MONOSPACED, Font.BOLD, 30));
+        text.setBounds(0, 420, 800, 80);
 
         p.setPreferredSize(new java.awt.Dimension(800, 800));
         p.add(title);
         p.add(btn);
+        p.add(text);
         return p;
     }
 

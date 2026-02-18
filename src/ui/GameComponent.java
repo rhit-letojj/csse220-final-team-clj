@@ -20,6 +20,7 @@ import javax.swing.Timer;
 import model.Collectible;
 import model.Enemy;
 import model.GameLogic;
+import model.LifePickup;
 import model.Map;
 import model.Player;
 
@@ -31,6 +32,7 @@ public class GameComponent extends JComponent {
     private final Player player;
     private final ArrayList<Enemy> enemies;
     private final ArrayList<Collectible> gems;
+    private final ArrayList<LifePickup> hearts;
 
     private final Runnable onWin;
     private final Runnable onGameOver;
@@ -52,6 +54,7 @@ public class GameComponent extends JComponent {
     private Sound sPush = new Sound("push.wav");
     private Sound sWin = new Sound("win.wav");
     private Sound sOver = new Sound("gameover.wav");
+    private Sound sHeart = new Sound("heart.wav");
 
 
     public GameComponent(GameLogic model, Runnable onWin, Runnable onGameOver) throws IOException {
@@ -60,6 +63,7 @@ public class GameComponent extends JComponent {
         this.player = model.getPlayer();
         this.enemies = new ArrayList<>(model.getEnemies());
         this.gems = new ArrayList<>(model.getGems());
+        this.hearts = new ArrayList<>(model.getHearts());
         this.onWin = onWin;
         this.onGameOver = onGameOver;
 
@@ -107,17 +111,26 @@ public class GameComponent extends JComponent {
         }
 
         for (int i = 0; i < gems.size(); i++) {
-            if (player.playerGetBounds().intersects(gems.get(i).gemGetBounds())) {
+            if (player.getBounds().intersects(gems.get(i).getBounds())) {
                 gems.remove(i);
                 sGem.play();
                 player.addPoints(100);
                 break;
             }
         }
+        
+        for (int i = 0; i < hearts.size(); i++) {
+            if (player.getBounds().intersects(hearts.get(i).getBounds())) {
+                hearts.remove(i);
+                sHeart.play();
+                player.addLife();
+                break;
+            }
+        }
 
-        if (player.pushing) {
+        if (player.isPushing()) {
             for (Enemy enemy : enemies) {
-                if (player.pushGetBounds().intersects(enemy.enemyGetBounds())) {
+                if (player.pushGetBounds().intersects(enemy.getBounds())) {
                     double dx = player.getPushDX();
                     double dy = player.getPushDY();
                     if (dx != 0 || dy != 0) {
@@ -129,7 +142,7 @@ public class GameComponent extends JComponent {
         }
 
         for (Enemy enemy : enemies) {
-            if (player.playerGetBounds().intersects(enemy.enemyGetBounds())) {
+            if (player.getBounds().intersects(enemy.getBounds())) {
                 if (damageCooldownMs <= 0) {
                     player.hurt();
                     damageCooldownMs = 2000;
@@ -147,7 +160,7 @@ public class GameComponent extends JComponent {
             SwingUtilities.invokeLater(onGameOver);
         }
 
-        if (model.getExit() != null && player.playerGetBounds().intersects(model.getExit())) {
+        if (model.getExit() != null && player.getBounds().intersects(model.getExit())) {
             win = true;
             timer.stop();
             sWin.play();
@@ -200,6 +213,7 @@ public class GameComponent extends JComponent {
         }
 
         for (Collectible gem : gems) gem.draw(g2);
+        for (LifePickup h : hearts) h.draw(g2);
         for (Enemy enemy : enemies) enemy.draw(g2);
         player.draw(g2);
 
